@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .product-details-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .product-image-section {
+      text-align: center;
+    }
+
+    .product-image-section img {
+      width: 100%;
+      max-width: 500px;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .product-info-section {
+      padding: 20px;
+    }
+
+    .product-info-section h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .product-category {
+      display: inline-block;
+      background: #f0f0f0;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .product-price {
+      font-size: 36px;
+      color: #2c7a3e;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+
+    .product-description {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #555;
+      margin: 20px 0;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 15px 30px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: #2c7a3e;
+      color: white;
+      flex: 1;
+    }
+
+    .btn-primary:hover {
+      background: #245c31;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: #2c7a3e;
+      border: 2px solid #2c7a3e;
+    }
+
+    .btn-secondary:hover {
+      background: #f0f0f0;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin: 20px;
+      color: #2c7a3e;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 100px;
+      font-size: 20px;
+      color: #666;
+    }
+
+    .error {
+      text-align: center;
+      padding: 100px;
+      color: #d32f2f;
+      font-size: 18px;
+    }
+
+    @media (max-width: 768px) {
+      .product-details-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="back-link">← Back to Home</a> |
+    <a href="product.html" class="back-link">Products</a> |
+    <a href="cart.html" class="back-link">Cart</a>
+  </nav>
+
+  <div id="product-container">
+    <div class="loading">Loading product details...</div>
+  </div>
+
+  <script>
+    // Get product ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+
+    if (!productId) {
+      document.getElementById('product-container').innerHTML = 
+        '<div class="error">No product ID provided. <a href="product.html">Go to Products</a></div>';
+    } else {
+      loadProductDetails(productId);
+    }
+
+    function loadProductDetails(id) {
+      fetch(`http://localhost:5000/api/products/${id}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Product not found');
+          }
+          return res.json();
+        })
+        .then(product => {
+          displayProductDetails(product);
+        })
+        .catch(err => {
+          console.error('Error loading product:', err);
+          document.getElementById('product-container').innerHTML = 
+            `<div class="error">
+              <h2>Product not found</h2>
+              <p>The product you're looking for doesn't exist.</p>
+              <a href="product.html" class="btn btn-primary">Back to Products</a>
+            </div>`;
+        });
+    }
+
+    function displayProductDetails(product) {
+      const container = document.getElementById('product-container');
+      
+      const imageUrl = product.image || 'https://via.placeholder.com/500';
+      const description = product.description || 'No description available for this product.';
+      const category = product.category || 'Uncategorized';
+
+      container.innerHTML = `
+        <div class="product-details-container">
+          <div class="product-image-section">
+            <img src="${imageUrl}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/500';">
+          </div>
+
+          <div class="product-info-section">
+            <span class="product-category">${category}</span>
+            <h1>${product.name}</h1>
+            <div class="product-price">₹${product.price}</div>
+            
+            <div class="product-description">
+              <h3>Description</h3>
+              <p>${description}</p>
+            </div>
+
+            <div class="action-buttons">
+              <button class="btn btn-primary" onclick="addToCart('${product._id}', '${product.name}', ${product.price}, '${imageUrl}')">
+                Add to Cart
+              </button>
+              <a href="product.html" class="btn btn-secondary">Continue Shopping</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function addToCart(id, name, price, image) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      
+      // Check if product already in cart
+      const existingItem = cart.find(item => item.name === name);
+      
+      if (existingItem) {
+        alert(name + " is already in your cart!");
+        return;
+      }
+      
+      cart.push({ id, name, price, image });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      
+      alert(name + " added to cart!");
+      
+      // Optional: redirect to cart
+      // window.location.href = 'cart.html';
+    }
+  </script>
+
+</body>
+</html>
