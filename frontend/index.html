@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Commerce Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ================= NAVBAR ================= -->
+  <nav class="navbar">
+    <h2 class="logo">MyStore</h2>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="cart.html">Cart</a></li>
+      <li><a href="login.html">Login</a></li>
+      <li><a href="register.html">Register</a></li>
+      <li id="userDisplay" style="display:none;"><a href="#" onclick="logout()">Logout</a></li>
+    </ul>
+  </nav>
+
+  <!-- ================= PAGE TITLE ================= -->
+  <h1 class="title">Our Products</h1>
+
+  <!-- ================= PRODUCT GRID ================= -->
+  <div id="products" class="product-grid"></div>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    // Check if logged in
+    window.addEventListener("load", () => {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user) {
+        document.getElementById("userDisplay").style.display = "block";
+        document.getElementById("userDisplay").innerHTML = 
+          `<span style="color:white">Welcome ${user.name}</span> | <a href="#" onclick="logout()">Logout</a>`;
+        document.querySelector('a[href="login.html"]').parentElement.style.display = "none";
+        document.querySelector('a[href="register.html"]').parentElement.style.display = "none";
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem("user");
+      window.location.href = "index.html";
+    }
+
+    // Fetch products from backend
+    fetch("http://localhost:5000/api/products")
+      .then(response => {
+        if (!response.ok) throw new Error("Failed to fetch products");
+        return response.json();
+      })
+      .then(data => {
+        const container = document.getElementById("products");
+
+        if (!data || data.length === 0) {
+          container.innerHTML = "<p>No products found.</p>";
+          return;
+        }
+
+        data.forEach(product => {
+          const card = document.createElement("div");
+          card.classList.add("product-card");
+
+          const imageUrl = product.image || "https://via.placeholder.com/300";
+
+          card.innerHTML = `
+            <img src="${imageUrl}" class="product-img" alt="${product.name}">
+            <h3>${product.name}</h3>
+            <p class="price">₹${product.price}</p>
+            <button class="btn addCartBtn"
+              data-name="${product.name}"
+              data-price="${product.price}">
+              Add to Cart
+            </button>
+          `;
+
+          container.appendChild(card);
+        });
+
+        attachCartEvents();
+      })
+      .catch(err => {
+        console.error("Error:", err);
+        document.getElementById("products").innerHTML =
+          "<p style='color:red'>Error loading products.</p>";
+      });
+
+    // Cart logic
+    function attachCartEvents() {
+      const buttons = document.querySelectorAll(".addCartBtn");
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const name = btn.dataset.name;
+          const price = Number(btn.dataset.price);
+          addToCart(name, price);
+        });
+      });
+    }
+
+    function addToCart(name, price) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart.push({ name, price });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      alert(name + " added to cart!");
+    }
+  </script>
+
+</body>
+</html>

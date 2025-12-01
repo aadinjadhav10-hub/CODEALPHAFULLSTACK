@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Your Cart</h1>
+
+  <a href="index.html">Home</a> |
+  <a href="product.html">Products</a> |
+  <a href="cart.html">Cart</a>
+  <button id="clear-cart-btn">Clear Cart</button>
+
+  <div id="cart-items" style="margin-top: 20px;"></div>
+
+  <script>
+    function renderCart() {
+      const cartContainer = document.getElementById("cart-items");
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+      if (cart.length === 0) {
+        cartContainer.innerHTML = "<p>Your cart is empty.</p>";
+      } else {
+        cartContainer.innerHTML = "";
+        cart.forEach((item, idx) => {
+          const div = document.createElement("div");
+          
+          // Use a fallback image if item.image is missing or undefined
+          const imageUrl = item.image || 'https://via.placeholder.com/100';
+          
+          div.innerHTML = `
+            <img src="${imageUrl}" alt="${item.name}" style="width:100px;height:100px;" onerror="this.src='https://via.placeholder.com/100';"><br>
+            <h2>${item.name}</h2>
+            <p>Price: ₹${item.price}</p>
+            <button onclick="removeFromCart(${idx})">Remove</button>
+            <hr>
+          `;
+          cartContainer.appendChild(div);
+        });
+      }
+    }
+
+    function removeFromCart(index) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart.splice(index, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      renderCart();
+    }
+
+    document.getElementById("clear-cart-btn").onclick = function() {
+      localStorage.removeItem("cart");
+      renderCart();
+    };
+
+    window.removeFromCart = removeFromCart;
+
+    renderCart();
+  </script>
+
+</body>
+</html>
